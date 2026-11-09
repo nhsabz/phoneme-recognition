@@ -1,0 +1,44 @@
+# prompts_v1: original sentences written for this project (no third-party text).
+# Intended to cover all 39 phonemes, with extra t/d, s/z and p/b contrasts.
+# Coverage is checked with CMUdict in the next milestone (not yet verified).
+# One sentence per line. Lines starting with '#' are ignored.
+The tall dog dug a deep pit by the old tree.
+Please put the blue box back on the top shelf.
+Sue sees the zoo buses pass by at noon.
+Ten tired teachers tried to drive to town.
+Bob bought a big bag of brown beans.
+The quick fox jumped over the lazy hedge.
+She shut the shiny shop door at six.
+Measure the beige garage with a rope and a ruler.
+A thin thread of smoke rose over the bath house.
+They gathered their things and left the theater together.
+Judge Jones enjoyed the orange juice at lunch.
+Check the chair near the kitchen before church.
+Young Yusuf yelled yes from the yellow yard.
+The cow found a brown mouse in the house.
+Boys enjoy noisy toys and coins.
+I like to ride my bike at night.
+Wait for the late train at eight.
+Go slowly over the road to the boat.
+Look at the good book on the wood cook stove.
+Few new rules are true for you too.
+The bird heard a word from the girl at work.
+Father saw the large car in the dark park.
+The cat had a black hat and a bag of apples.
+Get the red pen and send the letter.
+Sing a song while bringing the long ring home.
+Hand me the heavy hammer and the hooks.
+Where will we walk when the weather is warm.
+Lift the left leg and roll the little ball.
+Many men made money in the main market.
+Nine new nurses need nice napkins.
+Five vivid violets survived the winter.
+Pat paid for the bat and the bad pad.
+Sip the soup but do not zip the bag yet.
+Tim dimmed the lamp and tapped the drum.
+Peas and bees buzz near the pond in spring.
+The big pig dug for a pink bug.
+Toss the dice and see what the tide brings.
+His house was close to the bus stop.
+Please do not touch the tea or the toast.
+Zero is a number, and so is seven.

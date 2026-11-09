@@ -1,0 +1,7 @@
+# PC (Windows 11, Python 3.13). Install torch FIRST with the command in README (CPU wheel).
+numpy>=2.0
+scipy>=1.13
+sounddevice>=0.5
+cmudict>=1.0
+pytest>=8.0
+# torch>=2.6   (installed separately, see README)

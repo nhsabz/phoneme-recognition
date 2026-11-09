@@ -1,0 +1,20 @@
+{
+  "model": "a",
+  "model_kwargs": {},
+  "seed": 1234,
+  "train_split": "train",
+  "train_variants": ["clean", "aug1"],
+  "dev_split": "dev",
+  "dev_variants": ["clean"],
+  "batch_size": 48,
+  "epochs": 40,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup_epochs": 1.0,
+  "grad_clip": 5.0,
+  "amp": true,
+  "num_workers": 2,
+  "patience": 8,
+  "spec_augment": {"n_freq": 2, "max_f": 8, "n_time": 2, "max_t": 40},
+  "log_every": 100
+}

@@ -1,0 +1,30 @@
+# environments
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# data, recordings, features and models are NOT committed
+data/recordings/
+data/librispeech/
+data/features/
+data/noise/
+*.wav
+*.flac
+*.npy
+*.npz
+checkpoints/
+*.pt
+*.onnx
+logs/
+
+# keep these small text files
+!data/prompts/
+!data/manifest_template.csv
+
+# generated outputs
+smoke_out/
+smoke_out_pytest/
+phonrec_code.zip
+reports/

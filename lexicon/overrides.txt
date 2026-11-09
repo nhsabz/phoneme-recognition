@@ -1,0 +1,3 @@
+# Manual pronunciations (override CMUdict). Format: WORD  PH1 PH2 ... (stress digits optional)
+# Example:
+# LUCKFOX  L AH1 K F AA2 K S

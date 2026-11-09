@@ -1,0 +1,2 @@
+recording_id,audio_path,transcript,speaker_id,session_id,noise,distance,mic,device,native_sr,duration_s,split,created
+s000_spk01_0000,data/recordings/s000/s000_spk01_0000.wav,The tall dog dug a deep pit by the old tree.,spk01,s000,quiet,near,laptop-internal,Microphone Array (AMD Audio Dev,44100,8.089,,2026-11-01T23:22:53
