@@ -18,6 +18,8 @@ Read `phoneme-pipeline-plan.md` first (requirements, assumptions, decisions D1â€
 - Never report numbers that were not actually measured. Say clearly what is untested.
 - If the spec is ambiguous: state the assumption and log it as a decision (D-number) in the plan.
 - After each milestone: update `phoneme-pipeline-plan.md` (checklist + progress log).
+- Git: repo github.com/nhsabz/phoneme-recognition (branch main). No `Co-Authored-By: Claude` or other
+  Claude attribution in commit messages or PR descriptions.
 
 ## Environment
 - Windows 11, Python 3.13, venv `.\.venv` (always use it: `.\.venv\Scripts\Activate.ps1` or `.venv/Scripts/python.exe`).
