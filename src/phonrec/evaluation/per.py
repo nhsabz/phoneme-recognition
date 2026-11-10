@@ -37,8 +37,12 @@ class AlignStats:
                 "errors": self.errors, "per": self.per}
 
 
-def align(ref: list, hyp: list) -> AlignStats:
-    """Levenshtein alignment (unit costs) with backtrace."""
+def align_ops(ref: list, hyp: list) -> list[tuple[str, int | None, int | None]]:
+    """Levenshtein alignment (unit costs) with backtrace.
+
+    Returns ops in forward order: ("ok"|"sub", i, j), ("del", i, None), ("ins", None, j),
+    with i / j indexing ref / hyp.
+    """
     n, m = len(ref), len(hyp)
     d = np.zeros((n + 1, m + 1), dtype=np.int32)
     d[:, 0] = np.arange(n + 1)
@@ -48,23 +52,44 @@ def align(ref: list, hyp: list) -> AlignStats:
         for j in range(1, m + 1):
             c = 0 if ri == hyp[j - 1] else 1
             d[i, j] = min(d[i - 1, j - 1] + c, d[i - 1, j] + 1, d[i, j - 1] + 1)
-    st = AlignStats(n_ref=n)
+    ops = []
     i, j = n, m
     while i > 0 or j > 0:
         if i > 0 and j > 0 and d[i, j] == d[i - 1, j - 1] + (0 if ref[i - 1] == hyp[j - 1] else 1):
-            if ref[i - 1] != hyp[j - 1]:
-                st.sub += 1
-            st.pairs[(ref[i - 1], hyp[j - 1])] += 1
+            ops.append(("ok" if ref[i - 1] == hyp[j - 1] else "sub", i - 1, j - 1))
             i, j = i - 1, j - 1
         elif i > 0 and d[i, j] == d[i - 1, j] + 1:
-            st.dele += 1
-            st.pairs[(ref[i - 1], "")] += 1
+            ops.append(("del", i - 1, None))
             i -= 1
         else:
-            st.ins += 1
-            st.pairs[("", hyp[j - 1])] += 1
+            ops.append(("ins", None, j - 1))
             j -= 1
+    return ops[::-1]
+
+
+def align(ref: list, hyp: list) -> AlignStats:
+    """Levenshtein alignment (unit costs) -> S/D/I counts and (ref, hyp) pairs."""
+    st = AlignStats(n_ref=len(ref))
+    for op, i, j in align_ops(ref, hyp):
+        if op in ("ok", "sub"):
+            st.sub += op == "sub"
+            st.pairs[(ref[i], hyp[j])] += 1
+        elif op == "del":
+            st.dele += 1
+            st.pairs[(ref[i], "")] += 1
+        else:
+            st.ins += 1
+            st.pairs[("", hyp[j])] += 1
     return st
+
+
+def hyp_correct(ref: list, hyp: list) -> list[bool]:
+    """Per hypothesis token: True if aligned as a match (substitutions and insertions are False)."""
+    ok = [False] * len(hyp)
+    for op, _, j in align_ops(ref, hyp):
+        if op == "ok":
+            ok[j] = True
+    return ok
 
 
 def corpus_per(refs: list[list], hyps: list[list]) -> AlignStats:

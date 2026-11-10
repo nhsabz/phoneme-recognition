@@ -45,7 +45,7 @@ Status legend: [ ] not started · [~] in progress · [x] done with evidence · (
 ### Evaluation & decoding
 - [~] Greedy CTC (argmax, merge repeats, drop blanks) → PER on held-out set
 - [ ] PER per condition (quiet/noisy/near/far), confusion matrix, reliability curve
-- [ ] Temperature fitted on dev set so 0–7 confidence "means what it says"
+- [x] Temperature fitted on dev set so 0–7 confidence "means what it says" (Model A, LibriSpeech dev; T=0.995)
 - [ ] Target PER decided before training and written next to the test set
 - [ ] Later: lexicon beam search + LM on same posteriors
 
@@ -126,10 +126,10 @@ Model A — "widths 128 to 192" is ambiguous. Candidates (no BN / with BN):
 | P2 | Front end (streaming), 42-ch features, Wiener bypass, VAD + tests | P0 | offline == chunked test, shape/finite tests |
 | P3 | Model A/B code; param + receptive-field tests | P0 | printed counts vs spec |
 | P4 [~] | Colab notebook: LibriSpeech subset → cache → train A (resume, AMP) | P2,P3 | dev PER curve, best ckpt on Drive |
-| P5 | Evaluation: PER, S/D/I, confusion, per condition, latency | P4 | report with real numbers |
-| P6 | Temperature scaling + 0–7 mapping, reliability curve, ECE | P5 | calibration report (dev-fitted) |
+| P5 [~] | Evaluation: PER, S/D/I, confusion, per condition, latency | P4 | report with real numbers |
+| P6 [x] | Temperature scaling + 0–7 mapping, reliability curve, ECE | P5 | calibration report (dev-fitted) |
 | P7 | Live app on Windows | P2,P6 | latency log, demo log vs reference |
-| P8 | Model B training + comparison table | P4 | A vs B table |
+| P8 [~] | Model B training + comparison table | P4 | A vs B table |
 | P9 | Fine-tune on own recordings; Wiener A/B; error-analysis loop | P1,P5 | per-condition PER, Wiener decision |
 | P10 | Optional: distillation B→A; lexicon beam search + LM | P8 | experiment report |
 
@@ -171,6 +171,12 @@ phoneme-recognition/
 - D7: Microphone for now = laptop built-in mic (spec says USB mic); Windows audio enhancements off. Recorded as `mic` in manifest.
 - D8: HPF = 2nd-order Butterworth 80 Hz + DC blocker (pole 0.995); ~18 dB at 30 Hz.
 - (pending) internal long-pause SIL rule for LibriSpeech (currently edges only).
+- D11 (2026-11-10, assumption: spec does not define "confidence"): confidence of an emitted phoneme = its max
+  posterior over its greedy CTC frame span; "correct" = aligned match vs reference (sub/ins = wrong), SIL excluded.
+  Temperature T (log_softmax(lp/T); argmax and PER unchanged) is fit on DEV by minimising the binary NLL of
+  (confidence, correct). Held-out check: fit on one half of dev speakers (crc32 of speaker id), ECE on the other.
+- D12 (2026-11-10, assumption): 0-7 scale = floor(8p) clipped to 7, so level k claims P(correct) in [k/8,(k+1)/8);
+  calibrated when each level's measured accuracy falls in its range (level table in calibration.json).
 
 ## 9. Progress log
 - 2026-11-01: Spec analysed; plan created.
@@ -197,3 +203,46 @@ phoneme-recognition/
 - 2026-11-02: Colab run 1, §1 failed: zip not at My Drive/phonrec/phonrec_code.zip; the cell continued, and pytest then
   ran from /content and crawled all of Drive (4.5 min, unrelated tests). Fix: §1 stops with a clear error if the
   zip is missing (lists shallow matches elsewhere), asserts the unzip, and runs `pytest ... tests` only.
+- 2026-11-10: FIRST REAL MODEL A RUN (Colab T4, QUICK=True). Read from checkpoints/best.pt (file dated 2026-11-04):
+  134,569 params, 40/40 epochs, 4760 steps (119 steps/epoch at batch 48 -> ~5.7k train utts), Wiener on,
+  train variants clean+aug1. Best dev-clean PER 0.4245 (greedy, SIL excluded) at epoch 39 = the LAST epoch
+  (bad_epochs 0) -> not converged; more data/epochs should still help. history.csv / §1-3 logs (phonemize
+  report, speaker count) not yet copied to the PC.
+  Sanity check on own mic recording s000_spk01_0000 (laptop mic, 8.1 s, 26 ref phonemes): PER 0.679.
+  ONE utterance only, not a metric; suggests a large mic/room domain gap (expected; fine-tune in P9).
+  P4 exit evidence partly met (best ckpt yes; dev PER curve not yet on PC).
+- 2026-11-10: Colab notebook outputs received (user's Downloads/train_colab.ipynb). Same QUICK features for A and B.
+  Data: train-clean-100 28,539 utts / 251 spk; dev-clean 2703 / 40; test-clean 2620 / 40.
+  Used: train 5678 of the first 6000, dev 2523 of 2703 (rest dropped: OOV, >25 s, or too short for CTC;
+  the split per reason is in phonemize_report.json, not yet seen). All dev numbers below are on these 2523 utts.
+  Model A (40 ep, 119 steps/ep, ~40 s/epoch on T4): dev PER 0.9715 (ep0) -> 0.6577 (ep3) -> 0.4934 (ep10)
+  -> 0.4461 (ep19) -> 0.4245 (ep39, best). Train loss 1.635 vs dev loss 1.335 at ep39 (dev < train because
+  train has SpecAugment + aug1 noise). Gains in the last 10 epochs ~0.004 -> close to converged for this data
+  and LR schedule; more data is the next lever.
+  P5 dev eval (§7, evaluate.py on best.pt): PER 0.4246, S 46,210 / D 25,311 / I 2,857 of 175,187 ref phonemes;
+  RTF 0.0004 on T4 (GPU, not the PC). Top confusions: IH->AH 1652, AH->IH 1251, D->T 768, T->D 697, M->N 636,
+  EH->AH 582, AE->AH 546, S->Z 517, Z->S 474 (vowel centralisation + voicing pairs). Deletions (25k) far exceed insertions (2.9k)
+  -> model under-emits phonemes. logprobs.npz saved on Drive (reports/model_a_v1_dev/) for P6.
+  P8 Model B (40 ep, 178 steps/ep at batch 32, ~64 s/epoch): best dev PER 0.2463 at ep39 (still improving slowly).
+  A vs B on identical QUICK data: 0.4245 vs 0.2463 (from training-loop dev eval; §7 not yet run for B).
+  Not run: §9 test (kept for the end). Warnings seen are harmless (float(loss) on a grad tensor; one
+  "scheduler before optimizer" warning = first AMP step skipped by GradScaler).
+- 2026-11-10: Drive files on PC: reports/model_a_v1_dev/{results.json, logprobs.npz (2523 utts, float16), history.csv},
+  checkpoints/model_b_best.pt, reports/phonemize_report_{train,dev}.json.
+  Phonemize: train 5678/6000 kept (322 OOV-dropped; 224 unique OOV), dev 2540/2703 (163 OOV-dropped; 110 unique);
+  17 more dev utts dropped by length -> 2523. Extra (LibriSpeech) lexicon supplied only 735 dev / 2975 train word
+  tokens and words like BOZZLE, HURSTWOOD are still OOV -> SUSPECT the Drive copy of librispeech-lexicon.txt is
+  truncated (the notebook skips the download if any file exists). To check in Colab (wc -l, grep BOZZLE).
+- 2026-11-10: P6 code: evaluation/calibration.py, per.align_ops/hyp_correct (align() refactored on top of it,
+  same results), scripts/calibrate.py, tests/test_calibration.py (synthetic: recovers T0=2 within 1.6-2.5).
+  66 tests pass. NOT yet run on real dev data: needs reports/model_a_v1_dev/per_utterance.jsonl (refs) from Drive.
+- 2026-11-10: P6 RUN on Model A dev (reports/model_a_v1_calib/{calibration.json, reliability.png}).
+  2523 dev utts, 152,723 emitted non-SIL phonemes, emitted-phoneme accuracy 0.6788.
+  float16 dump: 23 utts differ from evaluate.py hyps by 23 of 152,733 tokens (top-2 ties after rounding); accepted (<0.1%).
+  Held-out speaker half (fit 25 spk, held 15 spk): T fit = 0.995; ECE 0.0158 (T=1) -> 0.0150; NLL 0.5219 -> 0.5219.
+  Final T (all dev) = 0.995 ~ 1: Model A is already well calibrated on LibriSpeech dev-clean (slightly
+  UNDER-confident at mid levels: level 4 claims 0.50-0.625, mean conf 0.561, accuracy 0.588).
+  Held-out level accuracy: L1 0.251 (n 529), L2 0.341, L3 0.459, L4 0.588, L5 0.705, L6 0.823, L7 0.935 (n 13,707);
+  L0 empty. All inside their claimed ranges except L1 (0.251 vs <=0.25, at the edge).
+  CAVEAT: valid for LibriSpeech-like audio only; own laptop-mic data needs its own dev-fitted T (P9).
+  P6 exit evidence met for Model A. Model B not calibrated yet (needs §7 eval of model_b_v1 with --save-logprobs).

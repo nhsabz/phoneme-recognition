@@ -4,4 +4,5 @@ scipy>=1.13
 sounddevice>=0.5
 cmudict>=1.0
 pytest>=8.0
+matplotlib>=3.8   # optional: reliability plot in scripts/calibrate.py
 # torch>=2.6   (installed separately, see README)

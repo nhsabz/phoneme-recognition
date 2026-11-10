@@ -40,6 +40,8 @@ Read `phoneme-pipeline-plan.md` first (requirements, assumptions, decisions D1�
 - `scripts/smoke_test.py` PASSED (features → train A, loss 15.1 → 5.1 → resume → evaluate → train B).
   Synthetic data, so its PER means nothing.
 - Recorder works; only 1 test recording so far. Own recordings come later (P9).
-- Colab: nothing run yet. **No real training results exist.**
-- Next: P4 first Model A run in Colab (QUICK=True) → P5 dev evaluation → P6 temperature + 0–7 confidence
-  (dev-fitted) → P7 live mic app.
+- 2026-11-10: first real Model A run (Colab, QUICK=True, ~5.7k LibriSpeech utts, 40 epochs) →
+  `checkpoints/best.pt`, best dev-clean PER 0.4245 at the last epoch (not converged).
+  One own-mic utterance decoded at PER 0.679 (single sample, not a metric).
+- Next: P5 dev evaluation (Colab §7 with --save-logprobs) → P6 temperature + 0–7 confidence
+  (dev-fitted) → P7 live mic app. Later: QUICK=False full train-clean-100 run.
