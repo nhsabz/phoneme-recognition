@@ -28,9 +28,11 @@ Read `phoneme-pipeline-plan.md` first (requirements, assumptions, decisions D1�
 - Code goes to Colab as `My Drive/phonrec/phonrec_code.zip` (built by `python scripts/make_code_zip.py`).
 
 ## Commands
-- Tests: `python -m pytest -q -m "not slow"` (59 pass on this PC as of 2026-11-02)
+- Tests: `python -m pytest -q -m "not slow"` (76 pass on this PC as of 2026-11-10)
 - Smoke test (synthetic data, end to end): `python scripts/smoke_test.py`
 - Zip for Colab: `python scripts/make_code_zip.py`
+- Calibrate (dev only): `python scripts/calibrate.py --logprobs reports/model_a_v1_dev/logprobs.npz --per-utt reports/model_a_v1_dev/per_utterance.jsonl --out reports/model_a_v1_calib`
+- Live: `python scripts/live.py --ckpt checkpoints/best.pt --calib reports/model_a_v1_calib/calibration.json [--wav f.wav] [--prompt "..."]`
 - Notebook: `notebooks/train_colab.ipynb` (sections: 1 setup, 2 data, 3 features, 4 copy, 5 train A,
   6 curves, 7 dev eval, 8 Model B, 9 final test once)
 
@@ -43,5 +45,10 @@ Read `phoneme-pipeline-plan.md` first (requirements, assumptions, decisions D1�
 - 2026-11-10: first real Model A run (Colab, QUICK=True, ~5.7k LibriSpeech utts, 40 epochs) →
   `checkpoints/best.pt`, best dev-clean PER 0.4245 at the last epoch (not converged).
   One own-mic utterance decoded at PER 0.679 (single sample, not a metric).
-- Next: P5 dev evaluation (Colab §7 with --save-logprobs) → P6 temperature + 0–7 confidence
-  (dev-fitted) → P7 live mic app. Later: QUICK=False full train-clean-100 run.
+- P5 dev eval done (A: PER 0.4246); Model B trained (dev PER 0.2463). P6 done for A: T = 0.995 (dev).
+- P7 live app written (`streaming/live.py`, `scripts/live.py`); WAV mode verified identical to offline.
+  Mic runs 2026-11-11: latency median 0.30 s, 0 overflows, RTF ~0.11; PER 0.75-0.93 on one sentence (3 tries);
+  confidence levels do not separate right/wrong on this mic (LibriSpeech calibration does not transfer).
+- Files on PC (git-ignored): checkpoints/best.pt (A), checkpoints/model_b_best.pt (B), reports/.
+- Next: P9 own recordings / fine-tune (+ own-mic dev set for re-calibration). Later: QUICK=False full train-clean-100 run;
+  check Drive librispeech-lexicon.txt is complete (suspected truncated, see plan log).

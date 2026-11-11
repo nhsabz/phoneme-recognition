@@ -50,7 +50,7 @@ Status legend: [ ] not started · [~] in progress · [x] done with evidence · (
 - [ ] Later: lexicon beam search + LM on same posteriors
 
 ### Live test
-- [ ] Stream USB mic through identical feature code, short sliding windows, phoneme stream with 0–7 confidence, log failures
+- [x] Stream USB mic through identical feature code, short sliding windows, phoneme stream with 0–7 confidence, log failures (mic runs 2026-11-11: latency median 0.30 s, 0 overflows)
 
 ---
 
@@ -128,7 +128,7 @@ Model A — "widths 128 to 192" is ambiguous. Candidates (no BN / with BN):
 | P4 [~] | Colab notebook: LibriSpeech subset → cache → train A (resume, AMP) | P2,P3 | dev PER curve, best ckpt on Drive |
 | P5 [~] | Evaluation: PER, S/D/I, confusion, per condition, latency | P4 | report with real numbers |
 | P6 [x] | Temperature scaling + 0–7 mapping, reliability curve, ECE | P5 | calibration report (dev-fitted) |
-| P7 | Live app on Windows | P2,P6 | latency log, demo log vs reference |
+| P7 [x] | Live app on Windows | P2,P6 | latency log, demo log vs reference |
 | P8 [~] | Model B training + comparison table | P4 | A vs B table |
 | P9 | Fine-tune on own recordings; Wiener A/B; error-analysis loop | P1,P5 | per-condition PER, Wiener decision |
 | P10 | Optional: distillation B→A; lexicon beam search + LM | P8 | experiment report |
@@ -208,7 +208,7 @@ phoneme-recognition/
   train variants clean+aug1. Best dev-clean PER 0.4245 (greedy, SIL excluded) at epoch 39 = the LAST epoch
   (bad_epochs 0) -> not converged; more data/epochs should still help. history.csv / §1-3 logs (phonemize
   report, speaker count) not yet copied to the PC.
-  Sanity check on own mic recording s000_spk01_0000 (laptop mic, 8.1 s, 26 ref phonemes): PER 0.679.
+  Sanity check on own mic recording s000_spk01_0000 (laptop mic, 8.1 s, 28 ref phonemes): PER 0.679.
   ONE utterance only, not a metric; suggests a large mic/room domain gap (expected; fine-tune in P9).
   P4 exit evidence partly met (best ckpt yes; dev PER curve not yet on PC).
 - 2026-11-10: Colab notebook outputs received (user's Downloads/train_colab.ipynb). Same QUICK features for A and B.
@@ -246,3 +246,26 @@ phoneme-recognition/
   L0 empty. All inside their claimed ranges except L1 (0.251 vs <=0.25, at the edge).
   CAVEAT: valid for LibriSpeech-like audio only; own laptop-mic data needs its own dev-fitted T (P9).
   P6 exit evidence met for Model A. Model B not calibrated yet (needs §7 eval of model_b_v1 with --save-logprobs).
+- 2026-11-10: P7 code: streaming/live.py (StreamingResampler = chunked scipy resample_poly; int16 quantisation as in
+  recorded WAVs; StreamingFrontend; StreamingConvModel = re-runs Model A on a short window and releases output j only
+  when input frames up to 2j+26 exist (260 ms lookahead, waits, never guesses); StreamingGreedy; dev T -> 0-7),
+  scripts/live.py (mic or --wav through the identical path; --prompt -> PER + errors; logs/live/<time>/
+  audio16k.wav, tokens.jsonl, summary.json with latency / RTF / overflows). Model B refused live (BiGRU).
+  tests/test_live.py (10): resampler == resample_poly for 44.1/48/22.05/16 kHz in random chunks; no future
+  dependence; chunked model == offline; lookahead (nothing at 26 frames, first output at 27); greedy == greedy_decode;
+  full live pipeline == offline path. 76 tests pass.
+  Measured, WAV mode on this PC: s000_spk01_0000 through the live path -> identical hypothesis to the offline check
+  (PER 0.679, S 14 D 4 I 1 / 28), processing RTF 0.094 (CPU, 50 ms blocks).
+  NOT yet run on the live mic: real-time latency, overflows and a demo log vs reference need the user's mic run.
+- 2026-11-11: P7 LIVE MIC RUNS (laptop mic, 44.1 kHz -> 16 kHz, Model A, T=0.995, prompt "The tall dog dug a deep
+  pit by the old tree.", 28 ref phonemes), logs/live/20261111-1217xx..1218xx:
+  | run | audio s | frame dBFS p10/p90 | PER | S/D/I | latency median / p95 / max s | RTF | overflows |
+  | 121723 | 10.2 | -47.9 / -42.4 (very quiet) | 0.893 | 7/18/0 | 0.303 / 0.459 / 0.567 | 0.113 | 0 |
+  | 121800 | 15.7 | -44.8 / -30.8 | 0.929 | 15/3/8 | 0.304 / 0.309 / 0.315 | 0.109 | 0 |
+  | 121841 | 7.4 | -44.6 / -26.5 | 0.750 | 18/3/0 | 0.304 / 0.316 / 0.479 | 0.107 | 0 |
+  Latency = end of a phoneme's audio -> printed; ~0.30 s = 260 ms lookahead + window/frame + 50 ms block, as designed.
+  Confidence does NOT transfer to this mic: pooled 68 emitted phonemes, correct mean level 4.20 (n 20) vs wrong 4.02
+  (n 48); 11 wrong vs 7 correct at level >= 6. LibriSpeech-dev calibration is not valid here (expected; tiny sample).
+  Run 121723 speech only ~5 dB above the noise floor -> mostly deletions. Run 121800 has 8 insertions (extra
+  speech/noise after the sentence). 3 utterances, one sentence, one speaker: demo evidence, not a metric.
+  P7 exit evidence met (latency log, demo log vs reference). Accuracy on own mic is the P9 problem.

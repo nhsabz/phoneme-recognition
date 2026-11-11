@@ -37,6 +37,14 @@ python scripts/record.py --list-devices
 python scripts/record.py --speaker spk01 --session s001 --noise quiet --distance near --mic laptop-internal
 ```
 
+## Live phoneme recognition (P7)
+```powershell
+python scripts/live.py --ckpt checkpoints/best.pt --calib reports/model_a_v1_calib/calibration.json --prompt "The tall dog dug a deep pit by the old tree."
+```
+Say the sentence, then Ctrl+C. Output: `PHONEME(level)` with calibrated confidence 0-7, about 0.3 s behind
+speech (Model A needs 260 ms of following audio; it waits, never guesses). Logs go to `logs/live/<time>/`.
+`--wav file.wav` runs a recording through the identical live path. Model A only (Model B's BiGRU is not streamable).
+
 ## Layout
 ```
 configs/labels.json      frozen 41-class map (blank=0, SIL=1, phonemes 2-40)
