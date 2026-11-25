@@ -1,0 +1,14 @@
+{
+ "_doc": "Own-recording split by WHOLE SESSION (decision D13). Train sessions read prompts_v1.txt; dev and test sessions read prompts_v2_eval.txt, so test sentences are never trained on. Test sessions are recorded on a different day and never used for any tuning. s000 = pilot recording, excluded.",
+ "sessions": {
+  "s000": {"split": "exclude", "speaker": "spk01", "noise": "quiet", "distance": "near", "prompts": "prompts_v1.txt"},
+  "s001": {"split": "train", "speaker": "spk01", "noise": "quiet", "distance": "near", "prompts": "prompts_v1.txt"},
+  "s002": {"split": "train", "speaker": "spk01", "noise": "quiet", "distance": "far", "prompts": "prompts_v1.txt"},
+  "s003": {"split": "train", "speaker": "spk01", "noise": "noisy", "distance": "near", "prompts": "prompts_v1.txt"},
+  "s004": {"split": "train", "speaker": "spk01", "noise": "noisy", "distance": "far", "prompts": "prompts_v1.txt"},
+  "s005": {"split": "dev", "speaker": "spk01", "noise": "quiet", "distance": "near", "prompts": "prompts_v2_eval.txt"},
+  "s006": {"split": "dev", "speaker": "spk01", "noise": "noisy", "distance": "far", "prompts": "prompts_v2_eval.txt"},
+  "s007": {"split": "test", "speaker": "spk01", "noise": "quiet", "distance": "near", "prompts": "prompts_v2_eval.txt"},
+  "s008": {"split": "test", "speaker": "spk01", "noise": "noisy", "distance": "far", "prompts": "prompts_v2_eval.txt"}
+ }
+}

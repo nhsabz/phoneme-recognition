@@ -39,27 +39,32 @@ from phonrec.phonemize.phonemizer import Phonemizer  # noqa: E402
 _W: dict = {}
 
 
-def load_audio(path: str) -> np.ndarray:
+def load_audio(path: str, trim: bool = True) -> np.ndarray:
+    """LibriSpeech .flac as is; own .wav recordings are cleaned (mic-start silence, Enter-key click),
+    see phonrec.audio.clean (decision D14)."""
+    from phonrec.audio.clean import trim_recording
     from phonrec.audio.io import read_wav, resample
     if path.lower().endswith(".flac"):
         import soundfile as sf  # available on Colab; pip install soundfile elsewhere
         x, sr = sf.read(path, dtype="float32")
         if x.ndim > 1:
             x = x.mean(1)
-    else:
-        x, sr = read_wav(path)
-    return resample(x, sr)
+        return resample(x, sr)
+    x, sr = read_wav(path)
+    x = resample(x, sr)
+    return trim_recording(x)[0] if trim else x
 
 
-def _init(cfg_dict, noise_dir):
+def _init(cfg_dict, noise_dir, trim=True):
     _W["cfg"] = FrontendConfig.from_dict(cfg_dict)
     _W["bank"] = NoiseBank(noise_dir)
+    _W["trim"] = trim
 
 
 def _work(job):
     uid, path, variant = job
     try:
-        x = load_audio(path)
+        x = load_audio(path, _W.get("trim", True))
         info = {}
         if variant != "clean":
             x, info = augment_audio(x, utt_rng(uid, variant), _W["bank"])
@@ -87,6 +92,7 @@ def main():
     ap.add_argument("--max-utts", type=int, default=0, help="limit for quick experiments (0 = all)")
     ap.add_argument("--max-seconds", type=float, default=25.0)
     ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument("--no-trim", action="store_true", help="do not clean own .wav recordings (D14)")
     args = ap.parse_args()
 
     base = Path(args.base_dir) if args.base_dir else ROOT
@@ -117,7 +123,7 @@ def main():
     out_split.mkdir(parents=True, exist_ok=True)
     report = {"manifest": args.manifest, "rows": len(rows), "kept": len(keep), "dropped": dict(dropped),
               "label_sources": dict(lex.source), "oov_top": lex.oov.most_common(200),
-              "oov_unique": len(lex.oov)}
+              "oov_unique": len(lex.oov), "trim_own_wav": not args.no_trim}
     (out_split / "phonemize_report.json").write_text(json.dumps(report, indent=1))
     print(f"[phonemize] {len(keep)}/{len(rows)} utterances kept, {len(lex.oov)} unique OOV words "
           f"(see {out_split / 'phonemize_report.json'})")
@@ -131,10 +137,10 @@ def main():
               for i in range(0, len(rows), args.shard_size)]
     t0 = time.time()
     errors = []
-    pool = ProcessPoolExecutor(args.workers, initializer=_init, initargs=(cfg.to_dict(), args.noise_dir)) \
-        if args.workers > 1 else None
+    init_args = (cfg.to_dict(), args.noise_dir, not args.no_trim)
+    pool = ProcessPoolExecutor(args.workers, initializer=_init, initargs=init_args) if args.workers > 1 else None
     if pool is None:
-        _init(cfg.to_dict(), args.noise_dir)
+        _init(*init_args)
     try:
         for variant in args.variants:
             vdir = out_split / variant

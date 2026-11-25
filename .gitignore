@@ -28,3 +28,5 @@ smoke_out/
 smoke_out_pytest/
 phonrec_code.zip
 reports/
+*.bak
+data/features_*/

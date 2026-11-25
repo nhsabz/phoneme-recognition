@@ -130,7 +130,7 @@ Model A — "widths 128 to 192" is ambiguous. Candidates (no BN / with BN):
 | P6 [x] | Temperature scaling + 0–7 mapping, reliability curve, ECE | P5 | calibration report (dev-fitted) |
 | P7 [x] | Live app on Windows | P2,P6 | latency log, demo log vs reference |
 | P8 [~] | Model B training + comparison table | P4 | A vs B table |
-| P9 | Fine-tune on own recordings; Wiener A/B; error-analysis loop | P1,P5 | per-condition PER, Wiener decision |
+| P9 [~] | Fine-tune on own recordings; Wiener A/B; error-analysis loop | P1,P5 | per-condition PER, Wiener decision |
 | P10 | Optional: distillation B→A; lexicon beam search + LM | P8 | experiment report |
 
 ---
@@ -177,6 +177,21 @@ phoneme-recognition/
   (confidence, correct). Held-out check: fit on one half of dev speakers (crc32 of speaker id), ECE on the other.
 - D12 (2026-11-10, assumption): 0-7 scale = floor(8p) clipped to 7, so level k claims P(correct) in [k/8,(k+1)/8);
   calibrated when each level's measured accuracy falls in its range (level table in calibration.json).
+- D13 (2026-11-25, assumption: spec says "held-out never-trained-on test set" but not how): own recordings are
+  split by WHOLE SESSION via configs/splits.json. Train sessions read data/prompts/prompts_v1.txt (40 sentences);
+  dev and test sessions read data/prompts/prompts_v2_eval.txt (40 different original sentences), so test
+  sentences are never trained on. Test sessions recorded on a different day. With one speaker, the test set is
+  speaker-DEPENDENT (only new sessions/sentences); results will not generalise to new speakers. If other
+  speakers record, put at least one whole speaker in test. s000 (pilot) excluded.
+  Session plan spk01: s001-s004 train (quiet/noisy x near ~30 cm / far ~1.5 m), s005-s006 dev (quiet near,
+  noisy far), s007-s008 test (quiet near, noisy far). ~40 utts x ~3.5 s = ~2.3 min audio per session:
+  4 train sessions ~ 10 min, small; more train sessions (other rooms / times / speakers) will help.
+- D14 (2026-11-25, data cleaning; measured on s001): own .wav takes are trimmed before feature extraction
+  (src/phonrec/audio/clean.py, applied in build_features.py; --no-trim to disable; raw WAVs untouched):
+  (a) leading digital silence (<-90 dBFS; 240-260 ms in every s001 take, mic stream start) - otherwise the
+  min-statistics noise tracker underestimates the floor for ~1.5 s; (b) a trailing Enter-key click: a burst
+  peaking >=15 dB over the room floor within the last 150 ms, right after >=50 ms near the floor
+  (21/40 s001 takes, 10-110 ms cut). Longer loud endings are kept as speech. Not applied to LibriSpeech.
 
 ## 9. Progress log
 - 2026-11-01: Spec analysed; plan created.
@@ -269,3 +284,18 @@ phoneme-recognition/
   Run 121723 speech only ~5 dB above the noise floor -> mostly deletions. Run 121800 has 8 insertions (extra
   speech/noise after the sentence). 3 utterances, one sentence, one speaker: demo evidence, not a metric.
   P7 exit evidence met (latency log, demo log vs reference). Accuracy on own mic is the P9 problem.
+- 2026-11-25: P9 started (recording). prompts_v1: 40 prompts, 1025 phonemes, all 39 covered (ZH only 3x);
+  YUSUF was OOV -> added to lexicon/overrides.txt. New prompts_v2_eval.txt: 40 prompts, 1140 phonemes, all 39
+  covered (none < 5), 0 OOV, 0 sentences shared with v1. configs/splits.json written (D13).
+  Recorder caveat: re-recording an index in a resumed session appends a duplicate manifest row (the WAV is
+  overwritten) -> the split tool must keep the last row per recording_id.
+- 2026-11-25: s001 recorded (spk01, quiet, near, prompts_v1): 40 takes, 204.2 s, median 4.9 s; median peak -8.3 dBFS,
+  room floor (frame p10) -60.7 dBFS, speech (p90) -23.3 dBFS, median SNR 36.8 dB; no clipping; transcripts match.
+  scripts/apply_splits.py (split column from configs/splits.json, dedupe by recording_id, consistency warnings):
+  s000 exclude, s001 train. 80 tests pass (+4 test_clean.py).
+  ZERO-SHOT on s001 (a TRAIN session; no training on it yet; 1025 ref phonemes; data/features_own_*):
+  | Model A, trimmed (D14) | PER 0.6459 | S 491 D 147 I 24 |
+  | Model A, not trimmed   | PER 0.6537 | S 487 D 145 I 38 |
+  | Model B, trimmed       | PER 0.5571 | S 444 D 90 I 37 |
+  Trim: -0.8 pt (mostly 14 fewer insertions); small, 40 utts, direction as expected. Top A confusions S->Z 13,
+  T->D 11, AH->OW 8, IH->IY 8, P->B 6 (voicing + vowel quality). These are the pre-fine-tune baselines.

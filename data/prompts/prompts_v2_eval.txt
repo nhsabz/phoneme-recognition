@@ -1,0 +1,44 @@
+# prompts_v2_eval: original sentences written for this project (no third-party text).
+# ONLY for dev and test sessions. Never record these in a training session, so the
+# test set measures new sentences, not memorised ones (decision D13).
+# One sentence per line. Lines starting with '#' are ignored.
+The young musician played a usual tune at the casual party.
+A brave knight rode his horse through the misty valley.
+Joy pointed at the oyster on the moist sand.
+How loud is the crowd outside the town hall now?
+Could you push the wooden cart to the foot of the hill?
+Mother thinks the thick cloth is worth the price.
+Their father bathed the baby with warm water.
+A huge yellow kite flew over the beach yesterday.
+Put the leisure magazine beside the television.
+The chef chose fresh cheese and cherries for lunch.
+Jack and Jill jogged along the edge of the village bridge.
+Ships sail to the north shore when the wind is gentle.
+Grandma keeps her silver ring in a small red box.
+A hungry wolf howled under the full moon.
+The pupil wrote ten words on the white board.
+Eight great apes ate grapes in the shade.
+Our neighbor fixed the broken fence on Monday.
+Kim keeps a clock and a cup on her desk.
+Fred found five feathers near the farm gate.
+Please hold the door while I carry the boxes.
+Thirty thousand people watched the match on Thursday.
+The kids played tag in the yard until dark.
+Lucy used her phone to call the doctor.
+The cold wind blew through the open window.
+Ann asked her aunt about the angry cat.
+The soldier wore heavy boots in the mud.
+Rain fell on the roof all through the night.
+Who knew the noodles would cook so quickly?
+The early worm turned over in the soil.
+Vera visited a village near the river every summer.
+Hot coffee is good on a cold morning.
+The singer brought a long green scarf.
+My uncle owns a farm with sheep and goats.
+The tiny mouse hid behind the jar of honey.
+We should share the pizza with the whole team.
+Thank you for the gift you gave me in June.
+The boy enjoyed a voyage on a royal ship.
+A sharp knife cut the ripe orange in half.
+Usually the garage door is open at noon.
+The treasure was hidden in a beige box.
